@@ -3,8 +3,8 @@ package jsm_test
 import (
 	"encoding/json"
 	"fmt"
-	"testing"
 	"reflect"
+	"testing"
 )
 
 /*
@@ -58,7 +58,7 @@ type xxJSON struct {
 	T   map[string]*json.RawMessage `json:"t"`
 }
 
-var xxtypes = map[string]reflect.Type {
+var xxtypes = map[string]reflect.Type{
 	"t1": reflect.TypeOf(t1{}),
 	"t2": reflect.TypeOf(t2{}),
 }
