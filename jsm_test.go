@@ -51,18 +51,13 @@ type xx struct {
 	T tface `json:"t"`
 }
 
-type xxJSONdecode struct {
+type xxJSON struct {
 	Foo string `json:"foo"`
-	T map[string]json.RawMessage `json:"t"`	
-}
-
-type xxJSONencode struct {
-	Foo string `json:"foo"`
-	T map[string]tface `json:"t"`		
+	T map[string]*json.RawMessage `json:"t"`	
 }
 
 func (x *xx)UnmarshalJSON(data []byte) error {
-	var xd xxJSONdecode
+	var xd xxJSON
 
 	if err := json.Unmarshal(data, &xd); err != nil {
 		return err
@@ -80,24 +75,51 @@ func (x *xx)UnmarshalJSON(data []byte) error {
 		case "t2":	x.T = &t2{}
 		default:	return fmt.Errorf("xx.UnmarshalJSON: unknown t type: %v", xd.T)
 		}
-		return json.Unmarshal(v, x.T)
+		return json.Unmarshal(*v, x.T)
 	}
 	return nil
 }
 
 func (x *xx)MarshalJSON() ([]byte, error) {
-	var xe xxJSONencode
-	xe.Foo = x.Foo
-	xe.T = make(map[string]tface)
-	switch x.T.(type) {
-	case *t1:
-		xe.T["t1"] = x.T
-	case *t2:
-		xe.T["t2"] = x.T
-	default:
-		return nil, fmt.Errorf("xx.MarshalJSON: unknown t type")
+	var xd xxJSON
+
+	xd.Foo = x.Foo
+	j, err := json.Marshal(x.T)
+	if err != nil {
+		return nil, err
 	}
-	return json.Marshal(&xe)
+	xd.T = make(map[string]*json.RawMessage)
+
+	fmt.Printf("foo: %s\n", j)
+
+	jr := json.RawMessage(j)
+
+	switch x.T.(type) {
+	case *t1:	xd.T["t1"] = &jr
+	case *t2:	xd.T["t2"] = &jr
+	default:	return nil, fmt.Errorf("xx.MarshalJSON: unknown t type")
+	}
+	return json.Marshal(&xd)
+}
+
+// This is testing how json.RawMessage works. I needed to figure out that
+// json.RawMessage only has a pointer receivers, so even when it's part of a
+// struct it will have to a pointer value, otherwise it only gets encoded
+// as a byte array and as such it gets base64 encoded insted of passed through
+// as we want. This was slightly confusing.
+func TestRawMessage(t *testing.T) {
+	msg := `{"foo":"bar"}`
+	var m json.RawMessage			
+	if err := json.Unmarshal([]byte(msg), &m); err != nil {
+		t.Fatal(err)
+	}
+	msg2, err := json.Marshal(&m)		 // if this isn't &m, we're screwed.
+	if err != nil {
+		t.Fatal(err)
+	}
+	if msg != string(msg2) {
+		t.Errorf("wtf: %s != %s", msg, msg2)
+	}
 }
 
 func TestDec1(t *testing.T) {
