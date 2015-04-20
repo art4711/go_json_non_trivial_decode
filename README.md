@@ -98,4 +98,4 @@ which string we got in the map and create the right resulting struct.
 The `xx.MarshalJSON` function does the same thing, but with a
 different struct.
 
-This is implemented in revision [d3a0a16ada123ebd326e0e8ad92d5c7827774fd6](commit/1323e0a1131d6088692b9256dd30b9baea00427b)
+This is implemented in revision [d3a0a16ada123ebd326e0e8ad92d5c7827774fd6](https://github.com/art4711/go_json_non_trivial_decode/blob/d3a0a16ada123ebd326e0e8ad92d5c7827774fd6/jsm_test.go)
