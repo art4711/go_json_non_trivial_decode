@@ -27,7 +27,7 @@ const t1test = `{"foo":"bar","t":{"t1":{"a":1,"b":2}}}`
 const t2test = `{"foo":"bar","t":{"t2":{"c":1,"d":"str"}}}`
 
 type tface interface {
-	Tface() string
+	TypName() string
 }
 
 type t1 struct {
@@ -35,7 +35,7 @@ type t1 struct {
 	B int `json:"b"`
 }
 
-func (t *t1) Tface() string {
+func (t *t1) TypName() string {
 	return "t1"
 }
 
@@ -44,7 +44,7 @@ type t2 struct {
 	D string `json:"d"`
 }
 
-func (t *t2) Tface() string {
+func (t *t2) TypName() string {
 	return "t2"
 }
 
@@ -97,7 +97,7 @@ func (x *xx) MarshalJSON() ([]byte, error) {
 	}
 	xd.T = make(map[string]*json.RawMessage)
 	jr := json.RawMessage(j)
-	xd.T[x.T.Tface()] = &jr
+	xd.T[x.T.TypName()] = &jr
 
 	return json.Marshal(&xd)
 }
