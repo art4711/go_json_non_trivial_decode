@@ -34,7 +34,7 @@ type t1 struct {
 	A int	`json:"a"`
 	B int	`json:"b"`
 }
-func (t t1)Tface() int {
+func (t *t1)Tface() int {
 	return t.A + t.B
 }
 
@@ -42,7 +42,7 @@ type t2 struct {
 	C int		`json:"c"`
 	D string	`json:"d"`
 }
-func (t t2)Tface() int {
+func (t *t2)Tface() int {
 	return t.C + len(t.D)
 }
 
@@ -71,20 +71,16 @@ func (x *xx)UnmarshalJSON(data []byte) error {
 	/* Copy the fields that we want copied. */
 	x.Foo = xd.Foo
 
-	if tj, ok := xd.T["t1"]; ok {
-		var t t1
-		if err := json.Unmarshal(tj, &t); err != nil {
-			return err
+	if len(xd.T) > 1 {
+		return fmt.Errorf("More than one t field in JSON data")
+	}
+	for t, v := range xd.T {
+		switch t {
+		case "t1":	x.T = &t1{}
+		case "t2":	x.T = &t2{}
+		default:	return fmt.Errorf("xx.UnmarshalJSON: unknown t type: %v", xd.T)
 		}
-		x.T = t
-	} else if tj, ok := xd.T["t2"]; ok {
-		var t t2
-		if err := json.Unmarshal(tj, &t); err != nil {
-			return err
-		}
-		x.T = t
-	} else {
-		return fmt.Errorf("xx.UnmarshalJSON: unknown t type: %v", xd.T)
+		return json.Unmarshal(v, x.T)
 	}
 	return nil
 }
@@ -94,9 +90,9 @@ func (x *xx)MarshalJSON() ([]byte, error) {
 	xe.Foo = x.Foo
 	xe.T = make(map[string]tface)
 	switch x.T.(type) {
-	case t1:
+	case *t1:
 		xe.T["t1"] = x.T
-	case t2:
+	case *t2:
 		xe.T["t2"] = x.T
 	default:
 		return nil, fmt.Errorf("xx.MarshalJSON: unknown t type")
@@ -112,7 +108,7 @@ func TestDec1(t *testing.T) {
 	if totest.Foo != "bar" {
 		t.Errorf("foo mismatch: %s != bar", totest.Foo)
 	}
-	xt1, ok := totest.T.(t1)
+	xt1, ok := totest.T.(*t1)
 	if !ok {
 		t.Errorf("foo.t wrong type: %V", totest.T)
 	}
@@ -129,7 +125,7 @@ func TestDec2(t *testing.T) {
 	if totest.Foo != "bar" {
 		t.Errorf("foo mismatch: %s != bar", totest.Foo)
 	}
-	xt2, ok := totest.T.(t2)
+	xt2, ok := totest.T.(*t2)
 	if !ok {
 		t.Errorf("foo.t wrong type: %V", totest.T)
 	}
