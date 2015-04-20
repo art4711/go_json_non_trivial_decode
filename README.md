@@ -92,7 +92,7 @@ And for t2:
 
 The `xx.UnmarshalJSON` function json.Unmarshals the data into an
 intermediate struct: `xxJSONdecode` which instead of having the right
-type for T has a map[string]json.RawMessage. We then brutally look up
+type for T has a `map[string]json.RawMessage`. We then brutally look up
 which string we got in the map and create the right resulting struct.
 
 The `xx.MarshalJSON` function does the same thing, but with a
@@ -104,6 +104,23 @@ A slightly better approach but on the same theme, is implemented in
 [revision e11e04ce654e9be764f2547276558faf9009b158](https://github.com/art4711/go_json_non_trivial_decode/blob/e11e04ce654e9be764f2547276558faf9009b158/jsm_test.go).
 We get rid of the separate structs for encoding and decoding and use
 slightly more efficient mappings between the type string and the type.
+
+A different approach is implemented in
+[revision 707dd70240c85a2f979298820c70dcc130399190](https://github.com/art4711/go_json_non_trivial_decode/blob/707dd70240c85a2f979298820c70dcc130399190/jsm_test.go).
+This time the idea is to use slightly less efficient code, but allow
+this to scale to arbitrarily many implemented types without regressing
+to linear behavior (with a limited number of types this could be quite
+slow).  To Unmarshal we use a pre-computed `map[string]reflect.Type`,
+then use the type name we get to look up the type, relefect.New() to
+create a pointer to a new value of that type, then `.Interface()` to
+get an `interface{}` to that pointer, then type assertion back to
+`(tface)`. This is the best way I've found of generating values of one
+particular interface with dynamically determined types. To Marshal, we
+just make out the `tface` interface implement a function that returns
+the name of the type. It could be possible to create a map just like
+the one we use for Unmarshal, because allegedly reflect.Type is
+comparable, but I haven't tried and this works too.
+
 
 ## How to run ##
 
