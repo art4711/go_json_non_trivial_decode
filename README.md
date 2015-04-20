@@ -98,11 +98,15 @@ which string we got in the map and create the right resulting struct.
 The `xx.MarshalJSON` function does the same thing, but with a
 different struct.
 
-This is implemented in revision [d3a0a16ada123ebd326e0e8ad92d5c7827774fd6](https://github.com/art4711/go_json_non_trivial_decode/blob/d3a0a16ada123ebd326e0e8ad92d5c7827774fd6/jsm_test.go)
+This is implemented in [revision d3a0a16ada123ebd326e0e8ad92d5c7827774fd6](https://github.com/art4711/go_json_non_trivial_decode/blob/d3a0a16ada123ebd326e0e8ad92d5c7827774fd6/jsm_test.go)
 
+A slightly better approach but on the same theme, is implemented in
+[revision e11e04ce654e9be764f2547276558faf9009b158](https://github.com/art4711/go_json_non_trivial_decode/blob/e11e04ce654e9be764f2547276558faf9009b158/jsm_test.go).
+We get rid of the separate structs for encoding and decoding and use
+slightly more efficient mappings between the type string and the type.
 
 ## How to run ##
 
     go test .
 
-Is all that's needed to run this.
+is all that's needed to run this.
