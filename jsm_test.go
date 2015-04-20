@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"testing"
+	"reflect"
 )
 
 /*
@@ -26,7 +27,7 @@ const t1test = `{"foo":"bar","t":{"t1":{"a":1,"b":2}}}`
 const t2test = `{"foo":"bar","t":{"t2":{"c":1,"d":"str"}}}`
 
 type tface interface {
-	Tface() int
+	Tface() string
 }
 
 type t1 struct {
@@ -34,8 +35,8 @@ type t1 struct {
 	B int `json:"b"`
 }
 
-func (t *t1) Tface() int {
-	return t.A + t.B
+func (t *t1) Tface() string {
+	return "t1"
 }
 
 type t2 struct {
@@ -43,8 +44,8 @@ type t2 struct {
 	D string `json:"d"`
 }
 
-func (t *t2) Tface() int {
-	return t.C + len(t.D)
+func (t *t2) Tface() string {
+	return "t2"
 }
 
 type xx struct {
@@ -55,6 +56,11 @@ type xx struct {
 type xxJSON struct {
 	Foo string                      `json:"foo"`
 	T   map[string]*json.RawMessage `json:"t"`
+}
+
+var xxtypes = map[string]reflect.Type {
+	"t1": reflect.TypeOf(t1{}),
+	"t2": reflect.TypeOf(t2{}),
 }
 
 func (x *xx) UnmarshalJSON(data []byte) error {
@@ -71,14 +77,11 @@ func (x *xx) UnmarshalJSON(data []byte) error {
 		return fmt.Errorf("More than one t field in JSON data")
 	}
 	for t, v := range xd.T {
-		switch t {
-		case "t1":
-			x.T = &t1{}
-		case "t2":
-			x.T = &t2{}
-		default:
+		typ, ok := xxtypes[t]
+		if !ok {
 			return fmt.Errorf("xx.UnmarshalJSON: unknown t type: %v", xd.T)
 		}
+		x.T = reflect.New(typ).Interface().(tface)
 		return json.Unmarshal(*v, x.T)
 	}
 	return nil
@@ -93,19 +96,9 @@ func (x *xx) MarshalJSON() ([]byte, error) {
 		return nil, err
 	}
 	xd.T = make(map[string]*json.RawMessage)
-
-	fmt.Printf("foo: %s\n", j)
-
 	jr := json.RawMessage(j)
+	xd.T[x.T.Tface()] = &jr
 
-	switch x.T.(type) {
-	case *t1:
-		xd.T["t1"] = &jr
-	case *t2:
-		xd.T["t2"] = &jr
-	default:
-		return nil, fmt.Errorf("xx.MarshalJSON: unknown t type")
-	}
 	return json.Marshal(&xd)
 }
 
